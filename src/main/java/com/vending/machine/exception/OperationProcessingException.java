@@ -5,9 +5,6 @@ package com.vending.machine.exception;
  *
  */
 public class OperationProcessingException extends RuntimeException {
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 6865316594640230140L;
 
 	public OperationProcessingException() {

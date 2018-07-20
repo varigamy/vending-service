@@ -1,7 +1,6 @@
 package com.vending.machine.service;
 
 import java.util.Collection;
-import java.util.Collections;
 
 import com.vending.machine.data.Coin;
 
@@ -10,7 +9,8 @@ import com.vending.machine.data.Coin;
  *
  */
 public interface VendingMachineService {
-	default Collection<Coin> getOptimalChangeFor(int cents) {
-		return Collections.emptyList();
-	}
+
+	Collection<Coin> getOptimalChangeFor(int cents);
+	
+	Collection<Coin> getChangeFor(int cents);
 }

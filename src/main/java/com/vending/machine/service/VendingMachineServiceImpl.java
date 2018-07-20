@@ -1,18 +1,28 @@
 package com.vending.machine.service;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
+import com.vending.machine.config.CoinDenominationsProperties;
 import com.vending.machine.data.Coin;
+import com.vending.machine.exception.InsufficientCoinageException;
 import com.vending.machine.exception.OperationProcessingException;
 
 import lombok.extern.slf4j.Slf4j;
@@ -24,29 +34,25 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @Slf4j
 public class VendingMachineServiceImpl implements VendingMachineService {
-	private static final Map<Integer, Coin> coinsMap = new HashMap<>();
-	private static List<Integer> sortedDenominations = null;
+	@Autowired
+	private CoinDenominationsProperties coinDenominations;
+
+	@Autowired
+	private ApplicationContext applicationContext;
+
+	private static Map<Integer, Coin> coinsMap;
+	private static List<Integer> sortedDenominations;
 
 	@PostConstruct
 	public void initialize() {
-		//TODO Out it in a properties or yaml file
-		coinsMap.put(100, new Coin(100, "One Euro"));
-		coinsMap.put(50, new Coin(50, "Fifty cents"));
-		coinsMap.put(20, new Coin(20, "Twenty cents"));
-		coinsMap.put(10, new Coin(10, "Ten cents"));
-		coinsMap.put(5, new Coin(5, "Five cents"));
-		coinsMap.put(2, new Coin(2, "Two cents"));
-		coinsMap.put(1, new Coin(1, "One cent"));
+		coinsMap = coinDenominations.getCoins().stream()
+				.collect(Collectors.toMap(Coin::getDenomination, Function.identity()));
 
-		sortedDenominations = coinsMap.keySet()
-				.stream()
-				.sorted(Comparator.reverseOrder())
-				.collect(Collectors.toList());
+		sortedDenominations = coinsMap.keySet().stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList());
 
 		if (sortedDenominations.isEmpty()) {
 			log.error("Denominations list is empty");
 		}
-		
 	}
 
 	@Override
@@ -57,18 +63,21 @@ public class VendingMachineServiceImpl implements VendingMachineService {
 
 		final Collection<Coin> coinsList = new ArrayList<>();
 		int centsResidual = cents;
-		
+
 		int denominationIndex = 0;
 		while (centsResidual > 0) {
 			int denomination = sortedDenominations.get(denominationIndex);
-			centsResidual = addCoinsForDenomination(coinsList, centsResidual, denomination);
+			if (denomination <= centsResidual) {
+				centsResidual = addCoinsForDenomination(coinsList, centsResidual, denomination);
+			}
 			denominationIndex++;
 		}
-		
+
 		return coinsList;
 	}
 
-	private static int addCoinsForDenomination(final Collection<Coin> createdCoinsCollection, final int centsResidual, final int denomination) {
+	private static int addCoinsForDenomination(final Collection<Coin> createdCoinsCollection, final int centsResidual,
+			final int denomination) {
 		int availableAmount = centsResidual;
 
 		while (availableAmount >= denomination) {
@@ -77,5 +86,47 @@ public class VendingMachineServiceImpl implements VendingMachineService {
 		}
 
 		return availableAmount;
+	}
+
+	@Override //TODO
+	public synchronized Collection<Coin> getChangeFor(int cents) {
+		final Map<Integer, Integer> inventoryCoinsMap = new LinkedHashMap<>();
+		boolean notEnoughCoins = false;
+		try {
+			Resource resource = applicationContext.getResource("classpath:coin-inventory.properties");
+			try {
+				InputStream is = resource.getInputStream();
+				BufferedReader br = new BufferedReader(new InputStreamReader(is));
+
+				String line;
+				int totalSum = 0;
+
+				while ((line = br.readLine()) != null) {
+					final String[] inventory = line.split("=");
+					if(inventory.length == 2) {
+						final Integer denomination = Integer.valueOf(inventory[0]);
+						final Integer count = Integer.valueOf(inventory[1]);
+						inventoryCoinsMap.put(denomination, count);
+						totalSum += denomination * count;
+					}
+				}
+
+				br.close();
+
+				if (cents < totalSum) {
+					notEnoughCoins = true;
+				}
+
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		} catch (Exception e) {
+			throw new OperationProcessingException("Error operating inventory");
+		}
+		
+		if (notEnoughCoins) {
+			throw new InsufficientCoinageException("Not enough coins");
+		}
+		return null;
 	}
 }
