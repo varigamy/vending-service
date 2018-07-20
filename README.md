@@ -27,25 +27,25 @@ Open your conf maven directory (C:/apache-maven/conf) and open setting.xml file.
 4.	API references
 
 # Build and Test
-Go to the *vending-machine* (downloaded from the repository). You'll see the **pom.xml** file in the root directory.
+Go to the *vending-service* (downloaded from the repository). You'll see the **pom.xml** file in the root directory.
 
 Run (in cmd) the command:
 
 **mvn install**
 
-This will compile and build the project (the project will be packaged and archived in a jar file and created in the maven directory (in our case it might be C:/maven/com/vending/vending-machine/1.0.0 depending on what path we set to the **localRepository** in **settings.xml**. See above).
+This will compile and build the project (the project will be packaged and archived in a jar file and created in the maven directory (in our case it might be C:/maven/com/vending/vending-service/1.0.0 depending on what path we set to the **localRepository** in **settings.xml**. See above).
 
-Wait for several minutes (until all libs and dependencies are downloaded from the Maven central Repository https://search.maven.org/). The project is compiled and packaged to the C:/maven/com/vending/vending-machine/1.0.0 directory: this directory is specified in the **pom.xml** file.
+Wait for several minutes (until all libs and dependencies are downloaded from the Maven central Repository https://search.maven.org/). The project is compiled and packaged to the C:/maven/com/vending/vending-service/1.0.0 directory: this directory is specified in the **pom.xml** file.
 
 **Important**
-Run **mvn install** always after you take changes from the git repository for the corresponding project (vending-machine). Sometimes when you pick up new changes
+Run **mvn install** always after you take changes from the git repository for the corresponding project (vending-service). Sometimes when you pick up new changes
 you will have to run:
 
 **mvn clean install**
 
-When the **maven install** operation is completed go to the C:/maven/com/vending/vending-machine/1.0.0. Open your command line there and run:
+When the **maven install** operation is completed go to the C:/maven/com/vending/vending-service/1.0.0. Open your command line there and run:
 
-**java -jar vending-machine-1.0.0.jar**
+**java -jar vending-service-1.0.0.jar**
  
 This will start the embedded Tomcat servlet container and your App is deployed after a couple of seconds.
 
